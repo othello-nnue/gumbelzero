@@ -1,6 +1,6 @@
 using Bits
-include("./ffi.jl");
-include("./bitboard.jl");
+include("ffi.jl");
+include("bitboard.jl");
 struct Game
     a::UInt64
     b::UInt64
@@ -43,19 +43,7 @@ function playwhile(agent1, agent2, logger)
 end
 
 rand_agent(a::Game) = rand(moves(a))
-good_agent(a::Game) = model_agent(a, num_moves)
-
-function model_agent(a::Game, value)::UInt8
-    list = moves(a)
-    maxmove = findmin(x -> value(a + x), list)[2]
-    return list[maxmove]
-end
-
-function value_move(a::Game, value)::UInt8
-    list = moves(a)
-    mm = findmin(x -> value(a + x), list)
-    return (-mm[1], list[mm[2]])
-end
+good_agent(a::Game) = agent(num_moves, a)
 
 function agent(value, a::Game)::UInt8
     list = moves(a)
