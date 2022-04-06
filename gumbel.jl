@@ -30,13 +30,14 @@ end
 #give child_values=0 when unvisited
 function completed_value(value, policy, visits, child_values)
     policy_sum = sum(policy .* (visits .> 0))
-    value_sum = value + sum(visits)/policy_sum * sum(policy .* child_value)
+    value_sum = value + sum(visits) / policy_sum * sum(policy .* child_value)
     total_visits = 1 + sum(visits)
-    return value_sum/total_visits
+    return value_sum / total_visits
 end
 
 
 #loss : kl(policy_target, network)
 function policy_target_logits(logits, values)
     return logits + values
+    #can add sigma(values)
 end

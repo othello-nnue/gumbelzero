@@ -50,3 +50,11 @@ function agent(value, a::Game)::UInt8
     maxmove = findmin(x -> value(a + x), list)[2]
     return list[maxmove]
 end
+
+#also return policy target
+num_sim = 2
+function gumbel_agent(value, policy, a::Game)
+    list = moves(a)
+    maxmove = findmin(x -> value(a + x), list)[2]
+    return list[maxmove]
+end
