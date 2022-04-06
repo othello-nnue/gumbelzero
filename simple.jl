@@ -18,6 +18,7 @@ toplane(a::UInt64) = reshape(bits(a), 8, 8, 1, 1)
 input(a::Game) = cat(toplane(a.a), toplane(a.b), zeros(Float32, 8, 8, nf - 2), dims=3)
 output(a::Game) = model(input(a))
 value(a::Game) = sum(output(a))
+value_target(a::UInt64) = toplane(a) .* 2 .- 1
 #input(a::Vector{Game}) = cat((input).(a)..., dims = 4)
 
 
@@ -71,8 +72,7 @@ function generate_traindata!(positions, values)
 
         g = g + move
     end
-    score = toplane(g.b) .* 2 .- 1
-    value_data = ((x == turn ? score : -score) for x in turns)
+    value_data = ((x == turn ? g.b : ~g.b) for x in turns)
     append!(values, value_data)
 end
 
@@ -84,7 +84,7 @@ for i in 1:10000000000000
     testmode!(model)
 
     x_train::Vector{Game} = []
-    y_train = []
+    y_train::Vector{UInt64} = []
 
     while length(x_train) <= 256
         generate_traindata!(x_train, y_train)
@@ -95,9 +95,17 @@ for i in 1:10000000000000
 
     testmode!(model, false)
 
+    # augment
+    x_train = vcat((augment).(x_train)...)
+    y_train = vcat((Othello.augment).(y_train)...)
+
+    #transform
+    x_train2 = cat((input).(x_train)..., dims=4)
+    y_train2 = cat((value_target).(y_train)..., dims=4)
+
     parameters = params(model)
 
-    data = (cat((input).(x_train)..., dims=4), cat(y_train..., dims=4))
+    data = (x_train2, y_train2)
     loader = Flux.Data.DataLoader(data, batchsize=64, shuffle=true)
 
     loss(x, y) = Flux.Losses.mse(model(x), y)
