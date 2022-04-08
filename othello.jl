@@ -51,6 +51,12 @@ function agent(value, a::Game)::UInt8
     return list[maxmove]
 end
 
+function parallel_agent(value, a::Game)::UInt8
+    list = moves(a)
+    maxmove = findmin(value((x -> (a + x)).(list)))[2]
+    return list[maxmove]
+end
+
 #also return policy target
 num_sim = 2
 function gumbel_agent(value, policy, a::Game)
@@ -58,3 +64,6 @@ function gumbel_agent(value, policy, a::Game)
     maxmove = findmin(x -> value(a + x), list)[2]
     return list[maxmove]
 end
+
+augment(a::Game)::Vector{Game} = (Game).(Othello.augment(a.a), Othello.augment(a.b))
+praugment(a::Game)::Vector{Game} = (Game).(Othello.preserve_augment(a.a), Othello.preserve_augment(a.b))

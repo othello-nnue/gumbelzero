@@ -10,7 +10,7 @@ using CUDA
 nf = 32
 model = Chain(
     #Conv((1, 1), 2 => nf, mish, pad=SamePad()),
-    block(nf), block(nf), block(nf), block(nf),
+    block(nf), block(nf), #block(nf), block(nf),
     Conv((1, 1), nf => 1, tanh, pad=SamePad()),
 )
 
@@ -19,7 +19,10 @@ input(a::Game) = cat(toplane(a.a), toplane(a.b), zeros(Float32, 8, 8, nf - 2), d
 output(a::Game) = model(input(a))
 value(a::Game) = sum(output(a))
 value_target(a::UInt64) = toplane(a) .* 2 .- 1
-#input(a::Vector{Game}) = cat((input).(a)..., dims = 4)
+
+input(a::Vector{Game}) = cat((input).(a)..., dims = 4)
+output(a::Vector{Game}) = model(input(a))
+value(a::Vector{Game}) = sum(output(a), dims=(1,2,3))[1,1,1,:]
 
 
 #higher is better
@@ -61,13 +64,12 @@ function generate_traindata!(positions, values)
         push!(positions, g)
         push!(turns, turn)
 
-        pair = (x -> (x, -value(g + x))).(moves(g))
-        maxmove = findmax((x -> sum(x[2])).(pair))[2]
-
+        # pair = (x -> (x, -value(g + x))).(moves(g))
+        # maxmove = findmax((x -> sum(x[2])).(pair))[2]
         if rand() < epsilon
-            move = rand(pair)[1]
+            move = rand_agent(g)
         else
-            move = pair[maxmove][1]
+            move = parallel_agent(value, g)
         end
 
         g = g + move
