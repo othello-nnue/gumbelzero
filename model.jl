@@ -12,16 +12,26 @@ block(nf::Integer) = SkipConnection(Chain(
     BatchNorm(nf),
 ), +)
 
+#convnext-like-block
+nextblock(nf::Integer) = SkipConnection(Chain(
+    #BatchNorm(nf),
+    #DepthwiseConv((3, 3), nf => nf, pad=SamePad()),
+    DepthwiseConv((5, 5), nf => nf, pad=SamePad()),
+    #BatchNorm(nf),
+    LayerNorm(nf),
+    #Conv((1, 1), nf => 4 * nf, pad=SamePad()),
+    #BatchNorm(4 * nf, act),
+    Conv((1, 1), nf => 4 * nf, act, pad=SamePad()),
+    Conv((1, 1), 4 * nf => nf, pad=SamePad()),
+    #BatchNorm(nf)
+), +)
 
-#resnext-like-block
-resnextblock(nf::Integer) = SkipConnection(Chain(
-    BatchNorm(nf),
-    DepthwiseConv((3, 3), nf => nf, pad=SamePad()),
-    BatchNorm(nf),
+testingblock(nf::Integer) = SkipConnection(Chain(
     Conv((1, 1), nf => 4 * nf, pad=SamePad()),
     BatchNorm(4 * nf, act),
+    DepthwiseConv((3, 3), 4 * nf => 4 * nf, act, pad=SamePad()),
+    BatchNorm(nf),
     Conv((1, 1), 4 * nf => nf, pad=SamePad()),
-    BatchNorm(nf)
 ), +)
 
 function widening(nf::Integer, input)
@@ -45,5 +55,5 @@ nf = 32 #number of filters
 # )
 #bigmodel = Chain(block(nf), block(nf), block(nf), block(nf), block(nf), block(nf))
 
-RADAMW(η = 0.001, β = (0.9, 0.999), decay = 0) =
-  Flux.Optimiser(RADAM(1, β), WeightDecay(decay), Descent(η))
+RADAMW(η=0.001, β=(0.9, 0.999), decay=0) =
+    Flux.Optimiser(RADAM(1, β), WeightDecay(decay), Descent(η))
